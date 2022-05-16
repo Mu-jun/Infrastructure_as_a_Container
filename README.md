@@ -10,6 +10,7 @@
 ### 베이그런트 2.2.9
 #### 64bit
 >https://releases.hashicorp.com/vagrant/2.2.9/vagrant_2.2.9_x86_64.msi  
+>클라우드 이미지 : 
   
 ### PuTTY
 #### 64-bit x86
