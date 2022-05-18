@@ -3,44 +3,44 @@
 # 1~2 줄 -> 에디터에서 현재 파일이 루비(ruby)임을 인식하게 하는 호환 코드, 실행에는 영향없음. 에디터를 위한 코드임
 
 Vargrant.configure("2") do |config|
-  # 5 줄 -> "2"는 베이그런트에서 루비로 코드를 읽어 들여 실행할 때 작동하는 API버전
-  # do |name| ~ end 는 name의 시작과 끝을 나타낸다. 파이썬처럼 들여쓰기로 구분한다.
-  # do |config| 는 베이그런트 설정의 시작을 나타낸다.
+    # 5 줄 -> "2"는 베이그런트에서 루비로 코드를 읽어 들여 실행할 때 작동하는 API버전
+    # do |name| ~ end 는 name의 시작과 끝을 나타낸다. 파이썬처럼 들여쓰기로 구분한다.
+    # do |config| 는 베이그런트 설정의 시작을 나타낸다.
   
-  config.vm.define "m-k8s" do |cfg|
-    # "m-k8s"라는 가상머신을 정의하고, do |cfg|를 추가해 원하는 설정으로 변경한다.
+    config.vm.define "m-k8s" do |cfg|
+        # "m-k8s"라는 가상머신을 정의하고, do |cfg|를 추가해 원하는 설정으로 변경한다.
     
-    cfg.vm.box = "sysnet4admin/CentOS-k8s"
-    # 가상환경 이미지를 "sysnet4admin/CentOS-k8s"로 선택
+        cfg.vm.box = "sysnet4admin/CentOS-k8s"
+        # 가상환경 이미지를 "sysnet4admin/CentOS-k8s"로 선택
     
-    cfg.vm.provider = "virtualbox" do |vb|
-      # 베이그런트의 프로바이더가 버추얼박스라는 것을 정의한다.
-      # 프로바이더(provider)란 베이그런트를 통해 제공되는 코드가 실제로 가상 머신으로 배포되게 하는 소프트웨어를 말한다.
-      # do |vb|로 버추얼박스에서 필요한 설정을 정의한다.
-      
-      # 버추얼박스(프로바이더)에 생성한 가상 머신의 이름, CPU 수, 메모리 크기, 소속된 그룹을 명시한다.
-      vb.name = "m-k8s(github_SysNet4Admin)"
-      vb.cpus = 2
-      vb.memory = 2048
-      vb.customize = ["modifyvm", :id, "--groups", "/k8s-SM(github_SysNet4Admin)"]
+        cfg.vm.provider = "virtualbox" do |vb|
+            # 베이그런트의 프로바이더가 버추얼박스라는 것을 정의한다.
+            # 프로바이더(provider)란 베이그런트를 통해 제공되는 코드가 실제로 가상 머신으로 배포되게 하는 소프트웨어를 말한다.
+            # do |vb|로 버추얼박스에서 필요한 설정을 정의한다.
+
+            # 버추얼박스(프로바이더)에 생성한 가상 머신의 이름, CPU 수, 메모리 크기, 소속된 그룹을 명시한다.
+            vb.name = "m-k8s(github_SysNet4Admin)"
+            vb.cpus = 2
+            vb.memory = 2048
+            vb.customize = ["modifyvm", :id, "--groups", "/k8s-SM(github_SysNet4Admin)"]
+        end
+    
+        cfg.vm.host_name = "m-k8s"
+        # 가상머신의 호스트네임을 "m-k8s"로 설정
+
+        cfg.vm.network "private_network", ip: "192.168.1.10"
+        # 호스트 전용 네트워크를 private_network로 설정(eth1 인터페이스를 호스트전용으로 구성)하고 IP는 192.168.1.10으로 지정
+        # 호스트 전용 네트워크는 호스트 내부에 192.168.1.0대역의 사설망을 구성한다.
+        # 가상 머신은 NAT(Network Address Translation, 네트워크 주소 변환)인터페이스인 eth0를 통해서 인터넷에 접속한다.
+
+        cfg.vm.network "forwarded_port", guest: 22, host: 60010, auto_correct: true, id: "ssh"
+        # ssh 통신은 호스트(PC) 60010번을 게스트(가상머신) 22번으로 전달되도록 구성(포트포워딩?)한다.
+        # auto_correct: true 설정을 하면 혹시 모를 포트 중복이 생길 시 포트가 자동으로 변경된다.
+
+        cfg.vm.synced_folder "../data", "/vagrant", disabled: true
+        # 호스트와 게스트 사이에 디렉터리 동기화가 이뤄지지 않게 설정(disabled: true)
+
+        cfg.vm.provision "shell", path: "install_pkg.sh"
+        # "shell" 구문으로 경로(path)에 있는 install_pkg.sh를 게스트 내부에서 호출해 실행되도록 한다.
     end
-    
-    cfg.vm.host_name = "m-k8s"
-    # 가상머신의 호스트네임을 "m-k8s"로 설정
-    
-    cfg.vm.network "private_network", ip: "192.168.1.10"
-    # 호스트 전용 네트워크를 private_network로 설정(eth1 인터페이스를 호스트전용으로 구성)하고 IP는 192.168.1.10으로 지정
-    # 호스트 전용 네트워크는 호스트 내부에 192.168.1.0대역의 사설망을 구성한다.
-    # 가상 머신은 NAT(Network Address Translation, 네트워크 주소 변환)인터페이스인 eth0를 통해서 인터넷에 접속한다.
-    
-    cfg.vm.network "forwarded_port", guest: 22, host: 60010, auto_correct: true, id: "ssh"
-    # ssh 통신은 호스트(PC) 60010번을 게스트(가상머신) 22번으로 전달되도록 구성(포트포워딩?)한다.
-    # auto_correct: true 설정을 하면 혹시 모를 포트 중복이 생길 시 포트가 자동으로 변경된다.
-    
-    cfg.vm.synced_folder "../data", "/vagrant", disabled: true
-    # 호스트와 게스트 사이에 디렉터리 동기화가 이뤄지지 않게 설정(disabled: true)
-    
-    cfg.vm.provision "shell", path: "install_pkg.sh"
-    # "shell" 구문으로 경로(path)에 있는 install_pkg.sh를 게스트 내부에서 호출해 실행되도록 한다.
-  end
 end
